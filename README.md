@@ -1,4 +1,4 @@
-# erc-image.el #
+# erc-youtube.el #
 
 Show inlined info about youtube links in erc buffers.
 
