@@ -1,8 +1,6 @@
 ;;; erc-youtube.el --- Show received youtube urls in the ERC buffer
 
-;; Copyright (C) 2012  Jon de Andrés Frías
-;; Copyright (C) 2012  Raimon Grau Cuscó
-;; Copyright (C) 2012  David Vázquez
+;; Copyright (C) 2014  Raimon Grau Cuscó
 
 ;; Author: Raimon Grau Cuscó <raimonster@gmail.com>
 ;; Version: 0.1
