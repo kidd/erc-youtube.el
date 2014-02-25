@@ -69,14 +69,13 @@
 			(save-excursion
 				(let ((inhibit-read-only t))
 					(goto-char (marker-position marker))
-					(insert-before-markers
-					 (erc-strip-tags
-						(with-temp-buffer
-							(insert "[youtube] -  " video-title "
+          (let ((pt-before (point)))
+           (insert-before-markers
+            (with-temp-buffer
+              (insert "[youtube] -  " video-title "
 ")
-							(buffer-string))))
-					(put-text-property (point-min) (point-max) 'read-only t)))))
-	)
+              (buffer-string)))
+           (put-text-property pt-before (point) 'read-only t)))))))
 
 (defun erc-youtube-id (url)
 	(replace-regexp-in-string ".*youtube.com/watch\\?v=\\([a-zA-Z0-9]+\\)" "\\1" url))
