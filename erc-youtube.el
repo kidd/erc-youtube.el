@@ -58,6 +58,7 @@
   (search-forward "
 
 ")
+  (set-buffer-multibyte t)
   (kill-region (mark) (point))
 
 
