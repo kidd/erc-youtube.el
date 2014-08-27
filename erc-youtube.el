@@ -75,8 +75,8 @@ eyecatchup from Stackoverflow.com. Greetz and howdy.
 http://stackoverflow.com/a/10315969/28524
 http://stackoverflow.com/users/624466/eyecatchup")
 
-(defcustom erc-youtube-regex "^https?://\\(www.\\)?youtube.com/watch\\?v=\\([a-zA-Z0-9]+\\)"
-  "Regex to mach URLs to be downloaded"
+(defcustom erc-youtube-regex erc-youtube-regex-extract-videoid
+  "Regex for matching Youtube videos URLs and extracting the Video ID"
   :group 'erc-youtube
   :type '(regexp :tag "Regex"))
 
@@ -107,7 +107,8 @@ http://stackoverflow.com/users/624466/eyecatchup")
            (put-text-property pt-before (point) 'read-only t)))))))
 
 (defun erc-youtube-id (url)
-	(replace-regexp-in-string ".*youtube.com/watch\\?v=\\([a-zA-Z0-9]+\\)" "\\1" url))
+  "Extract and return the Youtube Video ID from the string URL."
+  (replace-regexp-in-string erc-youtube-regex-extract-videoid "\\1" url))
 
 (defun erc-youtube-show-info ()
   (interactive)
