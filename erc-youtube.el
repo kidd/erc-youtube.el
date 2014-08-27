@@ -46,8 +46,37 @@
   "Enable youtube."
   :group 'erc)
 
-(defcustom erc-youtube-regex "^https?://\\(www.\\)?youtube.com/watch\\?v=\\([a-zA-Z0-9]+\\)"
-  "Regex to mach URLs to be downloaded"
+(defconst erc-youtube-regex-extract-videoid
+  (concat
+   ;; Slurp the possible youtube domains and any other parameters
+   ;; before the Video ID, to ignore it.
+   "^\\(?:https?:\\/\\/\\)?\\(?:www\\.\\)?"
+   "\\(?:youtu\\.be\\/\\|youtube\\.com\\/\\(?:embed\\/\\|v\\/\\|watch\\?v=\\|watch\\?.+&v=\\)\\)"
+   ;; Match the Video ID which is currently 11 characters of [-_A-Za-z0-9]
+   ;; and save it as the first match group.
+   "\\(?1:[-_A-Za-z0-9]\\{11\\}\\)"
+   ;; Slurp up the rest of the url to ignore it
+   "\\(?:[^-_A-Za-z0-9]?.*\\)$"
+  )
+  "Emacs 24.3 style regexp to extract the Video ID of a Youtube URL.
+
+This regexp is used internally to check and extract the url from
+a IRC buffer and to make API request URLs.
+
+A Youtube URL has many patterns, including http://youtu.be/<video:id> and
+https://....youtube.com/...?v=<video:id>.
+
+The Video ID is currently defined as a 11 digit string of
+alphanumeric characters, hyphens and underscores. The matched
+Video ID can be referenced as the first regexp group result.
+
+This regexp is based on the javascript regexp provided by user
+eyecatchup from Stackoverflow.com. Greetz and howdy.
+http://stackoverflow.com/a/10315969/28524
+http://stackoverflow.com/users/624466/eyecatchup")
+
+(defcustom erc-youtube-regex erc-youtube-regex-extract-videoid
+  "Regex for matching Youtube videos URLs and extracting the Video ID"
   :group 'erc-youtube
   :type '(regexp :tag "Regex"))
 
@@ -78,7 +107,8 @@
            (put-text-property pt-before (point) 'read-only t)))))))
 
 (defun erc-youtube-id (url)
-	(replace-regexp-in-string ".*youtube.com/watch\\?v=\\([a-zA-Z0-9]+\\)" "\\1" url))
+  "Extract and return the Youtube Video ID from the string URL."
+  (replace-regexp-in-string erc-youtube-regex-extract-videoid "\\1" url))
 
 (defun erc-youtube-show-info ()
   (interactive)
