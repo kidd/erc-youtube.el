@@ -87,6 +87,7 @@ http://stackoverflow.com/users/624466/eyecatchup")
   (search-forward "
 
 ")
+  (set-buffer-multibyte t)
   (kill-region (mark) (point))
 
 
