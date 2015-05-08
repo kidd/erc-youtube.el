@@ -90,14 +90,14 @@ http://stackoverflow.com/users/624466/eyecatchup")
   (set-buffer-multibyte t)
   (kill-region (mark) (point))
 
-	(let ((video-title (car (xml-node-children
+  (let ((video-title (car (xml-node-children
                            (car (xml-get-children
                                  (car (xml-parse-region))
                                  'title)))) ))
-		(with-current-buffer (marker-buffer marker)
-			(save-excursion
-				(let ((inhibit-read-only t))
-					(goto-char (marker-position marker))
+    (with-current-buffer (marker-buffer marker)
+      (save-excursion
+        (let ((inhibit-read-only t))
+          (goto-char (marker-position marker))
           (let ((pt-before (point)))
             (insert-before-markers
              (with-temp-buffer
