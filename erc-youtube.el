@@ -57,7 +57,7 @@
    "\\(?1:[-_A-Za-z0-9]\\{11\\}\\)"
    ;; Slurp up the rest of the url to ignore it
    "\\(?:[^-_A-Za-z0-9]?.*\\)$"
-  )
+   )
   "Emacs 24.3 style regexp to extract the Video ID of a Youtube URL.
 
 This regexp is used internally to check and extract the url from
@@ -92,20 +92,20 @@ http://stackoverflow.com/users/624466/eyecatchup")
 
 
 	(let ((video-title 	(car (xml-node-children
-											(car (xml-get-children
-														(car (xml-parse-region))
-														'title)))) ))
+                            (car (xml-get-children
+                                  (car (xml-parse-region))
+                                  'title)))) ))
 		(with-current-buffer (marker-buffer marker)
 			(save-excursion
 				(let ((inhibit-read-only t))
 					(goto-char (marker-position marker))
           (let ((pt-before (point)))
-           (insert-before-markers
-            (with-temp-buffer
-              (insert "[youtube] -  " video-title "
+            (insert-before-markers
+             (with-temp-buffer
+               (insert "[youtube] -  " video-title "
 ")
-              (buffer-string)))
-           (put-text-property pt-before (point) 'read-only t)))))))
+               (buffer-string)))
+            (put-text-property pt-before (point) 'read-only t)))))))
 
 (defun erc-youtube-id (url)
   "Extract and return the Youtube Video ID from the string URL."
@@ -120,7 +120,7 @@ http://stackoverflow.com/users/624466/eyecatchup")
       (goto-char (point-max))
       (url-queue-retrieve
 			 (format "https://gdata.youtube.com/feeds/api/videos/%s" (erc-youtube-id url))
-			 ;			 (or (match-string 2 url) (match-string 1 url))
+                                        ;			 (or (match-string 2 url) (match-string 1 url))
 			 'erc-youtube
 			 (list
 				(point-marker))
