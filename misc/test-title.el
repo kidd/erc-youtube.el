@@ -6,7 +6,8 @@
 (defun erc-youtube/test/run-all ()
   "Should return t"
   (and
-   (erc-youtube/test/title-1)))
+   (erc-youtube/test/title-1)
+   (erc-youtube/test/post-json)))
 
 (defun erc-youtube/test/title-1 ()
   (and
@@ -18,16 +19,28 @@
 
 
 (defun get-yttitle-sync (video-id)
-  (let* ((url (format "https://gdata.youtube.com/feeds/api/videos/%s"
-                      video-id))
-         (wkbuffer (url-retrieve-synchronously url)))
-    (with-current-buffer wkbuffer
-      (goto-char (point-min))
-      (push-mark)
-      (search-forward "\n\n")
-      (set-buffer-multibyte t) ;;
-      (kill-region (mark) (point))
-      (car (xml-node-children
-            (car (xml-get-children
-                  (car (xml-parse-region))
-                  'title)))))))
+  "Query YouTube Data APIv3 for title of video with VIDEO-ID"
+  (let* ((request-url (erc-youtube-make-request-url video-id))
+         wkbuffer actual-title)
+    (when request-url
+      (setq wkbuffer (url-retrieve-synchronously request-url))
+      (with-current-buffer wkbuffer
+        (setq actual-title (erc-youtube--extract-title-from-response))))))
+
+(defun erc-youtube/test/post-json ()
+  (and
+   (let ((packed (get-packed-text)))
+     (string= "Google Chrome : Hatsune Miku (初音ミク)"
+              (erc-youtube--extract-title-from-packed (json-read-from-string packed))))))
+
+(defun get-packed-text ()
+"{ \"items\": [
+  {
+   \"snippet\": {
+    \"title\": \"Google Chrome : Hatsune Miku (初音ミク)\"
+   }
+  }
+ ]
+}")
+
+;;; ends here

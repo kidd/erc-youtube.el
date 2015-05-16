@@ -1,4 +1,4 @@
-;;; erc-youtube.el --- Show received youtube urls in the ERC buffer
+;;; erc-youtube.el --- Show info about a YouTube URL in an ERC buffer.
 
 ;; Copyright (C) 2014  Raimon Grau Cuscó
 
@@ -22,14 +22,24 @@
 
 ;;; Commentary:
 ;;
-;; Show inlined info about youtube links in erc buffers.  Requires
-;; Emacs 24.2
+;; Show info about a YouTube URL in an ERC buffer.
+;; Info is currently just the title.
+;; Requires Emacs 24.2.
+;;
+;; Warning! This version requires the user to define their own
+;; erc-youtube-apiv3-key. This won't work without it!
+;;
+;;; Setup:
 ;;
 ;; (require 'erc-youtube)
 ;; (add-to-list 'erc-modules 'youtube)
 ;; (erc-update-modules)
+;; (setq erc-youtube-apiv3-key "your-own-api-key-your-own-api-key")
 ;;
 ;; Or `(require 'erc-youtube)` and  `M-x customize-option erc-modules RET`
+;;
+;;
+;;; Details:
 ;;
 ;; This plugin subscribes to hooks `erc-insert-modify-hook' and
 ;; `erc-send-modify-hook' to download and show youtubes.  In this early
@@ -39,12 +49,16 @@
 
 
 (require 'erc)
-(require 'xml)
+(require 'json)
 (require 'url-queue)
 
 (defgroup erc-youtube nil
   "Enable youtube."
   :group 'erc)
+
+(defvar erc-youtube-apiv3-key nil
+  "An API key must be obtained by creating a Google Account. Use the
+Google Developers Console to create your own Client API key.")
 
 (defconst erc-youtube-regex-extract-videoid
   (concat
@@ -82,18 +96,7 @@ http://stackoverflow.com/users/624466/eyecatchup")
 
 (defun erc-youtube (status marker)
   (interactive)
-  (goto-char (point-min))
-	(push-mark)
-  (search-forward "
-
-")
-  (set-buffer-multibyte t)
-  (kill-region (mark) (point))
-
-  (let ((video-title (car (xml-node-children
-                           (car (xml-get-children
-                                 (car (xml-parse-region))
-                                 'title)))) ))
+  (let* ((video-title (erc-youtube--extract-title-from-response)))
     (with-current-buffer (marker-buffer marker)
       (save-excursion
         (let ((inhibit-read-only t))
@@ -101,29 +104,64 @@ http://stackoverflow.com/users/624466/eyecatchup")
           (let ((pt-before (point)))
             (insert-before-markers
              (with-temp-buffer
-               (insert "[youtube] -  " video-title "
-")
+               (insert "[youtube] -  " video-title "\n")
                (buffer-string)))
             (put-text-property pt-before (point) 'read-only t)))))))
+
+(defun erc-youtube--extract-title-from-response ()
+  "While inside an arbitrary `url-retrieve' buffer, extract the video title.
+Based on APIv3 specs."
+  (let (pt-before json-raw title-packed)
+    ;; delete HTTP headers
+    (goto-char (point-min))
+	(push-mark)
+    (search-forward "\n\n")
+    (kill-region (mark) (point))
+    ;; slurp the HTTP content
+    (set-buffer-multibyte t)
+    (setq pt-before (point))
+    (goto-char (point-max))
+    ;; ... as JSON
+    (setq json-raw (string-as-multibyte (buffer-substring-no-properties pt-before (point))))
+    (setq title-packed (json-read-from-string json-raw))
+    ;; convert to Emacs Lisp data and extract title
+    (erc-youtube--extract-title-from-packed title-packed)))
+
+(defun erc-youtube--extract-title-from-packed (packed)
+  "Retrieve the value of PACKED with key items/snippet/title."
+  (cdr (assoc 'title
+              (assoc 'snippet
+                     (elt (cdr (assoc 'items packed)) 0)))))
 
 (defun erc-youtube-id (url)
   "Extract and return the Youtube Video ID from the string URL."
   (replace-regexp-in-string erc-youtube-regex-extract-videoid "\\1" url))
 
+(defun erc-youtube-make-request-url (input-url)
+  "Make request url for YouTube Date API v3 from INPUT-URL.
+
+Returns nil if `erc-youtube-apiv3-key' is nil."
+  (let* ((base-url "https://www.googleapis.com/youtube/v3/videos")
+         (fields "items%2Fsnippet%2Ftitle")
+         (apikey erc-youtube-apiv3-key)
+         (id (erc-youtube-id input-url)))
+    (when apikey
+      (format "%s?part=snippet&fields=%s&key=%s&id=%s"
+              base-url fields apikey id))))
+
 (defun erc-youtube-show-info ()
   (interactive)
   (goto-char (point-min))
   (search-forward "http" nil t)
-  (let ((url (thing-at-point 'url)))
+  (let ((url (thing-at-point 'url))
+        request-url)
     (when (and url (string-match erc-youtube-regex url))
       (goto-char (point-max))
-      (url-queue-retrieve
-			 (format "https://gdata.youtube.com/feeds/api/videos/%s" (erc-youtube-id url))
-                                        ;			 (or (match-string 2 url) (match-string 1 url))
-			 'erc-youtube
-			 (list
-				(point-marker))
-			 t))))
+      (setq request-url (erc-youtube-make-request-url url))
+      (if request-url
+          (url-queue-retrieve
+           request-url 'erc-youtube (list (point-marker)) t)
+        (message "Cannot obtain title from YouTube. Please define `erc-youtube-apiv3-key''")))))
 
 
 ;;;###autoload
