@@ -18,16 +18,12 @@
 
 
 (defun get-yttitle-sync (video-id)
-  (let* ((url (format "https://gdata.youtube.com/feeds/api/videos/%s"
-                      video-id))
-         (wkbuffer (url-retrieve-synchronously url)))
-    (with-current-buffer wkbuffer
-      (goto-char (point-min))
-      (push-mark)
-      (search-forward "\n\n")
-      (set-buffer-multibyte t) ;;
-      (kill-region (mark) (point))
-      (car (xml-node-children
-            (car (xml-get-children
-                  (car (xml-parse-region))
-                  'title)))))))
+  "Query YouTube Data APIv3 for title of video with VIDEO-ID"
+  (let* ((request-url (erc-youtube-make-request-url video-id))
+         wkbuffer actual-title)
+    (when request-url
+      (setq wkbuffer (url-retrieve-synchronously request-url))
+      (with-current-buffer wkbuffer
+        (setq actual-title (erc-youtube--extract-title-from-response))))))
+
+;;; ends here
