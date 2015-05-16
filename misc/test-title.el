@@ -6,7 +6,8 @@
 (defun erc-youtube/test/run-all ()
   "Should return t"
   (and
-   (erc-youtube/test/title-1)))
+   (erc-youtube/test/title-1)
+   (erc-youtube/test/post-json)))
 
 (defun erc-youtube/test/title-1 ()
   (and
@@ -25,5 +26,21 @@
       (setq wkbuffer (url-retrieve-synchronously request-url))
       (with-current-buffer wkbuffer
         (setq actual-title (erc-youtube--extract-title-from-response))))))
+
+(defun erc-youtube/test/post-json ()
+  (and
+   (let ((packed (get-packed-text)))
+     (string= "Google Chrome : Hatsune Miku (初音ミク)"
+              (erc-youtube--extract-title-from-packed (json-read-from-string packed))))))
+
+(defun get-packed-text ()
+"{ \"items\": [
+  {
+   \"snippet\": {
+    \"title\": \"Google Chrome : Hatsune Miku (初音ミク)\"
+   }
+  }
+ ]
+}")
 
 ;;; ends here
